@@ -1,5 +1,7 @@
 # RuyiTuner
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 RuyiTuner builds LLVM IR datasets and uses LLVM New Pass Manager pass pipelines for runtime-synergy graph construction and GA-based tuning.
 
 The CMake layer only prepares datasets: it initializes submodules, syncs benchmark sources, and builds training/test `.ll` files with the user's LLVM toolchain. Runtime-synergy measurement, graph construction, and GA tuning are explicit Python steps.
