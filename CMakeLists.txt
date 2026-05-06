@@ -4,6 +4,7 @@ project(RuyiTuner NONE)
 set(RUYI_PYTHON python3 CACHE STRING "Python interpreter")
 set(RUYI_CLANG clang CACHE STRING "C compiler from the user's LLVM toolchain")
 set(RUYI_CLANGXX clang++ CACHE STRING "C++ compiler from the user's LLVM toolchain")
+set(RUYI_OPT opt CACHE STRING "LLVM opt from the user's LLVM toolchain")
 set(RUYI_LLVM_LINK llvm-link CACHE STRING "llvm-link from the user's LLVM toolchain")
 
 set(RUYI_TRAIN_TARGET 500 CACHE STRING "Number of training LLVM IR programs to generate")
@@ -11,6 +12,7 @@ set(RUYI_TRAIN_RUN_TIMEOUT 30 CACHE STRING "Per-run timeout while validating tra
 set(RUYI_TEST_RUN_TIMEOUT 30 CACHE STRING "Per-run timeout while validating test programs")
 set(RUYI_TEST_WORKERS 8 CACHE STRING "Parallel benchmark builds for test LLVM IR")
 set(RUYI_TEST_COMPILE_WORKERS 4 CACHE STRING "Parallel source compiles inside each test benchmark")
+set(RUYI_PASS_EXTRACT_TIMEOUT 20 CACHE STRING "Timeout for validating each extracted NPM pass")
 
 add_custom_target(submodules
   COMMAND git submodule update --init --recursive
@@ -54,6 +56,17 @@ add_custom_target(test-ll
   DEPENDS sync-test-benchmarks
   COMMENT "Building cBench and PolyBench LLVM IR tests with the selected LLVM toolchain")
 
+add_custom_target(extract-passes
+  COMMAND ${RUYI_PYTHON} scripts/extract_opt_pass_actions.py
+          --opt ${RUYI_OPT}
+          --sample-ll dataset/train/yarpgen_seed_1_-O2.ll
+          --timeout ${RUYI_PASS_EXTRACT_TIMEOUT}
+          --out-txt manifests/llvm22_opt_pass_actions.txt
+          --out-csv manifests/llvm22_opt_pass_actions.csv
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  DEPENDS train-ll
+  COMMENT "Extracting and validating LLVM New Pass Manager actions with the selected opt")
+
 add_custom_target(ruyi-datasets ALL
-  DEPENDS train-ll test-ll
-  COMMENT "Build training and test LLVM IR datasets only")
+  DEPENDS train-ll test-ll extract-passes
+  COMMENT "Build training/test LLVM IR datasets and NPM pass-action metadata")

@@ -172,7 +172,7 @@ def write_outputs(valid, invalid, out_txt, out_csv):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--opt", default="opt")
-    parser.add_argument("--sample-ll", default=str(ROOT / "dataset" / "ll" / "yarpgen_seed_1_-O2.ll"))
+    parser.add_argument("--sample-ll", default=str(ROOT / "dataset" / "train" / "yarpgen_seed_1_-O2.ll"))
     parser.add_argument("--timeout", type=int, default=20)
     parser.add_argument("--out-txt", default=str(ROOT / "manifests" / "llvm22_opt_pass_actions.txt"))
     parser.add_argument("--out-csv", default=str(ROOT / "manifests" / "llvm22_opt_pass_actions.csv"))

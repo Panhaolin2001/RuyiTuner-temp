@@ -32,6 +32,7 @@ Configure with your own LLVM toolchain:
 cmake -S . -B build \
   -DRUYI_CLANG=/path/to/clang \
   -DRUYI_CLANGXX=/path/to/clang++ \
+  -DRUYI_OPT=/path/to/opt \
   -DRUYI_LLVM_LINK=/path/to/llvm-link
 cmake --build build --target ruyi-datasets
 ```
@@ -48,13 +49,18 @@ Main outputs:
 - `dataset/src`: source snapshots for accepted samples.
 - `manifests/training_ll_manifest.csv`: accepted sample index.
 - `manifests/test_ll_manifest.csv`: test LLVM IR index with working directory and run arguments.
+- `manifests/llvm22_opt_pass_actions.csv`: LLVM New Pass Manager pass metadata extracted from the user's `opt --print-passes` and validated on a sample training `.ll`.
+- `manifests/llvm22_opt_pass_actions.txt`: valid NPM pass pipelines, one per line.
 
 You can also build only one side:
 
 ```bash
 cmake --build build --target train-ll
 cmake --build build --target test-ll
+cmake --build build --target extract-passes
 ```
+
+`extract-passes` depends on `train-ll` because it validates candidate NPM passes on `dataset/train/yarpgen_seed_1_-O2.ll`. The generated CSV is LLVM-toolchain dependent; if you switch LLVM versions, regenerate it.
 
 ## Runtime Synergy Graph And GA Tuning
 
