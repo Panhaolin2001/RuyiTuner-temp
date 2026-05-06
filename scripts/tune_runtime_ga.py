@@ -365,7 +365,7 @@ def main():
     parser.add_argument("--opt", default="opt")
     parser.add_argument("--clangxx", default="clang++")
     parser.add_argument("--min-total-ms", type=float, default=300.0)
-    parser.add_argument("--warmups", type=int, default=1)
+    parser.add_argument("--warmups", type=int, default=3)
     parser.add_argument("--opt-timeout", type=int, default=120)
     parser.add_argument("--compile-timeout", type=int, default=300)
     parser.add_argument("--run-timeout", type=int, default=600)

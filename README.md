@@ -58,7 +58,8 @@ python3 scripts/tune_runtime_ga.py path/to/test.ll \
   --population-size 100 \
   --mutation-rate 0.9 \
   --workers 16 \
-  --min-total-ms 300
+  --min-total-ms 300 \
+  --warmups 3
 ```
 
 Tune one LLVM IR file with a time budget. This mode uses a fixed population size of 16 by default and keeps running generations until the budget is reached:
@@ -70,7 +71,8 @@ python3 scripts/tune_runtime_ga.py path/to/test.ll \
   --time-budget-sec 60 \
   --mutation-rate 0.9 \
   --workers 16 \
-  --min-total-ms 300
+  --min-total-ms 300 \
+  --warmups 3
 ```
 
 `tune_runtime_ga.py` caches filtered graphs under `results/ga_graph_cache`, evaluates duplicate pass sequences only once, compiles candidates in parallel, and runs candidate binaries serially to reduce runtime-measurement noise.
