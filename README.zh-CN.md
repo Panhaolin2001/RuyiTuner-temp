@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="360">
+</p>
+
 # RuyiTuner
 
 [English](README.md) | [简体中文](README.zh-CN.md)
