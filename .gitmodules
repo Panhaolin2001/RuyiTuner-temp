@@ -1,0 +1,9 @@
+[submodule "third_party/PDCAT-master"]
+	path = third_party/PDCAT-master
+	url = https://github.com/zhumxxx/PDCAT-master.git
+[submodule "third_party/train/yarpgen"]
+	path = third_party/train/yarpgen
+	url = https://github.com/intel/yarpgen.git
+[submodule "third_party/train/llvm-project"]
+	path = third_party/train/llvm-project
+	url = https://github.com/llvm/llvm-project.git

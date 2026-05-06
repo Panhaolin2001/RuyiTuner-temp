@@ -1,6 +1,8 @@
-# RuyiTuner Training LLVM IR Dataset
+# RuyiTuner
 
-This workspace builds a C++ training set as LLVM IR files for LLVM pass synergy experiments.
+RuyiTuner builds LLVM IR datasets and uses LLVM New Pass Manager pass pipelines for runtime-synergy graph construction and GA-based tuning.
+
+The CMake layer only prepares datasets: it initializes submodules, syncs benchmark sources, and builds training/test `.ll` files with the user's LLVM toolchain. Runtime-synergy measurement, graph construction, and GA tuning are explicit Python steps.
 
 Only samples that pass the full validation pipeline are kept in `manifests/training_ll_manifest.csv`:
 
@@ -20,20 +22,57 @@ Current sources:
 - `third_party/train/yarpgen`: generated C++ programs.
 - `third_party/train/llvm-project/libcxx/test/std`: runnable libc++ `.pass.cpp` tests accepted by the local toolchain.
 
-Continue generating more validated `.ll` files:
+## Build LLVM IR Datasets
+
+Configure with your own LLVM toolchain:
 
 ```bash
-./scripts/build_training_ll.py --target 500 --yarpgen-start-seed 65 --yarpgen-max-seed 2000 --libcxx-scan 3000 --run-timeout 30
+cmake -S . -B build \
+  -DRUYI_CLANG=/path/to/clang \
+  -DRUYI_CLANGXX=/path/to/clang++ \
+  -DRUYI_LLVM_LINK=/path/to/llvm-link
+cmake --build build --target ruyi-datasets
 ```
 
 Main outputs:
 
-- `dataset/ll`: validated LLVM IR files.
+- `dataset/train`: validated training LLVM IR files.
+- `dataset/test/cBench`: cBench test benchmarks copied from PDCAT-master `Benchmarks/cBench`.
+- `dataset/test/polyBench`: PolyBench test benchmarks copied from PDCAT-master `Benchmarks/polyBench`.
+- `dataset/test_ll/cBench`: cBench test LLVM IR files, one linked `.ll` per runnable executable.
+- `dataset/test_ll/polyBench`: PolyBench test LLVM IR files, one linked `.ll` per runnable executable.
 - `dataset/bin`: binaries rebuilt from the `.ll` files.
+- `dataset/test_bin`: temporary binaries rebuilt from test `.ll` files.
 - `dataset/src`: source snapshots for accepted samples.
 - `manifests/training_ll_manifest.csv`: accepted sample index.
+- `manifests/test_ll_manifest.csv`: test LLVM IR index with working directory and run arguments.
+
+You can also build only one side:
+
+```bash
+cmake --build build --target train-ll
+cmake --build build --target test-ll
+```
 
 ## Runtime Synergy Graph And GA Tuning
+
+After the `.ll` datasets are built, run the optimization workflow explicitly:
+
+```bash
+python3 scripts/extract_opt_pass_actions.py --opt /path/to/opt
+
+python3 scripts/find_runtime_synergy_pairs.py \
+  --manifest manifests/training_ll_manifest.csv \
+  --actions-csv manifests/llvm22_opt_pass_actions.csv \
+  --opt /path/to/opt \
+  --clangxx /path/to/clang++ \
+  --workers 16 \
+  --min-total-ms 300 \
+  --warmups 3 \
+  --resume \
+  --out-dir results/runtime_synergy_full_all \
+  --summary results/runtime_synergy_full_all.csv
+```
 
 Build the directed pass synergy graph from completed runtime-synergy benchmark CSVs:
 

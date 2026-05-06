@@ -1,10 +1,29 @@
 __pycache__/
 *.pyc
 *.log
+nohup.out
 
+build/
 dataset/bin/
-third_party/
+dataset/src/
+dataset/train/
+dataset/test/
+dataset/test_bin/
+dataset/test_ll/
+
+manifests/test_ll_manifest.csv
 
 results/ga_tuning/
 results/ga_graph_cache/
 results/runtime_synergy_full_all.progress.log
+
+.DS_Store
+*.bc
+*.o
+_finfo_dataset
+ftmp*
+tmp*
+
+/driver.cpp
+/func.cpp
+/init.h

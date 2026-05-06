@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-YARPGEN = ROOT / "build" / "yarpgen" / "yarpgen"
+DEFAULT_YARPGEN = ROOT / "build" / "yarpgen-build" / "yarpgen"
 LIBCXX_STD = ROOT / "third_party" / "train" / "llvm-project" / "libcxx" / "test" / "std"
 LIBCXX_SUPPORT = ROOT / "third_party" / "train" / "llvm-project" / "libcxx" / "test" / "support"
 
@@ -44,12 +44,12 @@ def clean_name(value):
 
 
 def ensure_dirs():
-    for rel in ("dataset/ll", "dataset/bin", "dataset/src", "build/train_ll/tmp", "manifests"):
+    for rel in ("dataset/train", "dataset/bin", "dataset/src", "build/train_ll/tmp", "manifests"):
         (ROOT / rel).mkdir(parents=True, exist_ok=True)
 
 
-def validate_ll(ll_path, bin_path, timeout):
-    compile_res = run(["clang++", "-mcmodel=large", str(ll_path), "-o", str(bin_path)], timeout=120)
+def validate_ll(ll_path, bin_path, timeout, clangxx):
+    compile_res = run([clangxx, "-mcmodel=large", str(ll_path), "-o", str(bin_path)], timeout=120)
     if compile_res.returncode != 0:
         return False, "ll_compile_failed", compile_res.stderr[-2000:]
     run_res = run(["timeout", f"{timeout}s", str(bin_path)], timeout=timeout + 5)
@@ -58,23 +58,23 @@ def validate_ll(ll_path, bin_path, timeout):
     return True, "ok", run_res.stdout.strip()
 
 
-def build_yarpgen(seed, opt, run_timeout):
+def build_yarpgen(seed, opt, run_timeout, clangxx, llvm_link, yarpgen):
     name = f"yarpgen_seed_{seed}_{opt}"
     work = ROOT / "build" / "train_ll" / "tmp" / name
     src_out = ROOT / "dataset" / "src" / name
-    ll_out = ROOT / "dataset" / "ll" / f"{name}.ll"
+    ll_out = ROOT / "dataset" / "train" / f"{name}.ll"
     bin_out = ROOT / "dataset" / "bin" / name
     shutil.rmtree(work, ignore_errors=True)
     shutil.rmtree(src_out, ignore_errors=True)
     work.mkdir(parents=True)
 
-    gen_res = run([str(YARPGEN), "--std=c++", f"--seed={seed}", f"--out-dir={work}"], timeout=30)
+    gen_res = run([str(yarpgen), "--std=c++", f"--seed={seed}", f"--out-dir={work}"], timeout=30)
     if gen_res.returncode != 0:
         return None, "generate_failed", gen_res.stderr[-2000:]
 
     driver_bc = work / "driver.bc"
     func_bc = work / "func.bc"
-    common = ["clang++", "-std=c++17", opt, "-w", "-emit-llvm", "-c"]
+    common = [clangxx, "-std=c++17", opt, "-w", "-emit-llvm", "-c"]
     driver_res = run(common + [str(work / "driver.cpp"), "-o", str(driver_bc)], timeout=120)
     if driver_res.returncode != 0:
         return None, "driver_compile_failed", driver_res.stderr[-2000:]
@@ -82,11 +82,11 @@ def build_yarpgen(seed, opt, run_timeout):
     if func_res.returncode != 0:
         return None, "func_compile_failed", func_res.stderr[-2000:]
 
-    link_res = run(["llvm-link", str(driver_bc), str(func_bc), "-S", "-o", str(ll_out)], timeout=120)
+    link_res = run([llvm_link, str(driver_bc), str(func_bc), "-S", "-o", str(ll_out)], timeout=120)
     if link_res.returncode != 0:
         return None, "llvm_link_failed", link_res.stderr[-2000:]
 
-    ok, status, detail = validate_ll(ll_out, bin_out, run_timeout)
+    ok, status, detail = validate_ll(ll_out, bin_out, run_timeout, clangxx)
     if not ok:
         ll_out.unlink(missing_ok=True)
         bin_out.unlink(missing_ok=True)
@@ -118,15 +118,15 @@ def candidate_libcxx_files(limit_scan):
     return files
 
 
-def build_libcxx(path, opt, run_timeout):
+def build_libcxx(path, opt, run_timeout, clangxx):
     rel = path.relative_to(LIBCXX_STD).as_posix()
     name = "libcxx_" + clean_name(rel[:-4])
     src_out = ROOT / "dataset" / "src" / f"{name}.cpp"
-    ll_out = ROOT / "dataset" / "ll" / f"{name}_{opt}.ll"
+    ll_out = ROOT / "dataset" / "train" / f"{name}_{opt}.ll"
     bin_out = ROOT / "dataset" / "bin" / f"{name}_{opt}"
 
     cmd = [
-        "clang++",
+        clangxx,
         "-std=c++20",
         opt,
         "-w",
@@ -142,7 +142,7 @@ def build_libcxx(path, opt, run_timeout):
     if compile_res.returncode != 0:
         return None, "compile_failed", compile_res.stderr[-2000:]
 
-    ok, status, detail = validate_ll(ll_out, bin_out, run_timeout)
+    ok, status, detail = validate_ll(ll_out, bin_out, run_timeout, clangxx)
     if not ok:
         ll_out.unlink(missing_ok=True)
         bin_out.unlink(missing_ok=True)
@@ -190,6 +190,9 @@ def main():
     parser.add_argument("--libcxx-scan", type=int, default=2000)
     parser.add_argument("--run-timeout", type=int, default=30)
     parser.add_argument("--opt", default="-O2")
+    parser.add_argument("--clangxx", default="clang++")
+    parser.add_argument("--llvm-link", default="llvm-link")
+    parser.add_argument("--yarpgen", default=str(DEFAULT_YARPGEN))
     args = parser.parse_args()
 
     ensure_dirs()
@@ -202,7 +205,14 @@ def main():
             print(f"yarpgen seed={seed} skipped_existing", flush=True)
             seed += 1
             continue
-        row, status, _ = build_yarpgen(seed, args.opt, args.run_timeout)
+        row, status, _ = build_yarpgen(
+            seed,
+            args.opt,
+            args.run_timeout,
+            args.clangxx,
+            args.llvm_link,
+            Path(args.yarpgen),
+        )
         print(f"yarpgen seed={seed} {status}", flush=True)
         if row:
             accepted.append(row)
@@ -220,7 +230,7 @@ def main():
         if name in seen:
             print(f"libcxx {rel} skipped_existing", flush=True)
             continue
-        row, status, _ = build_libcxx(path, args.opt, args.run_timeout)
+        row, status, _ = build_libcxx(path, args.opt, args.run_timeout, args.clangxx)
         print(f"libcxx {rel} {status}", flush=True)
         if row:
             accepted.append(row)
