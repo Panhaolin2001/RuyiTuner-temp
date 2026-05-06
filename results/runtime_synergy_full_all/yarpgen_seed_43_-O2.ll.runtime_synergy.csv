@@ -1,0 +1,6 @@
+filename,baseline_sec,action1,action2,action2_sec,pair_sec,speedup_vs_action2,pipeline
+yarpgen_seed_43_-O2.ll,0.339858326,strip-dead-prototypes,inliner-wrapper-no-mandatory-first,0.335314716,0.329762122,0.016559351,"module(strip-dead-prototypes,inliner-wrapper-no-mandatory-first)"
+yarpgen_seed_43_-O2.ll,0.339858326,cgscc(inline),recompute-globalsaa,0.336212925,0.330520835,0.016930016,"module(cgscc(inline),recompute-globalsaa)"
+yarpgen_seed_43_-O2.ll,0.339858326,function(alignment-from-assumptions),recompute-globalsaa,0.336212925,0.330927661,0.015719991,"module(function(alignment-from-assumptions),recompute-globalsaa)"
+yarpgen_seed_43_-O2.ll,0.339858326,function(div-rem-pairs),recompute-globalsaa,0.336212925,0.329252018,0.020703866,"module(function(div-rem-pairs),recompute-globalsaa)"
+yarpgen_seed_43_-O2.ll,0.339858326,function(sjlj-eh-prepare),recompute-globalsaa,0.336212925,0.329750239,0.019222004,"module(function(sjlj-eh-prepare),recompute-globalsaa)"

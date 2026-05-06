@@ -1,0 +1,9 @@
+filename,baseline_sec,action1,action2,action2_sec,pair_sec,speedup_vs_action2,pipeline
+yarpgen_seed_60_-O2.ll,1.001358210,hipstdpar-interpose-alloc,canonicalize-aliases,0.989005500,0.978624146,0.010496761,"module(hipstdpar-interpose-alloc,canonicalize-aliases)"
+yarpgen_seed_60_-O2.ll,1.001358210,function(nary-reassociate),deadargelim,0.987927285,0.973647448,0.014454340,"module(function(nary-reassociate),deadargelim)"
+yarpgen_seed_60_-O2.ll,1.001358210,cgscc(argpromotion),hipstdpar-interpose-alloc,0.986518099,0.974555655,0.012125924,"module(cgscc(argpromotion),hipstdpar-interpose-alloc)"
+yarpgen_seed_60_-O2.ll,1.001358210,inferattrs,rewrite-symbols,0.989881354,0.977880002,0.012124031,"module(inferattrs,rewrite-symbols)"
+yarpgen_seed_60_-O2.ll,1.001358210,function(lower-matrix-intrinsics),function(alignment-from-assumptions),0.990895340,0.979076386,0.011927550,"module(function(lower-matrix-intrinsics),function(alignment-from-assumptions))"
+yarpgen_seed_60_-O2.ll,1.001358210,function(wasm-eh-prepare),function(vector-combine),0.988559141,0.969003663,0.019781798,"module(function(wasm-eh-prepare),function(vector-combine))"
+yarpgen_seed_60_-O2.ll,1.001358210,forceattrs,function(instcombine),0.990727441,0.974921515,0.015953859,"module(forceattrs,function(instcombine))"
+yarpgen_seed_60_-O2.ll,1.001358210,rel-lookup-table-converter,function(loop(extra-simple-loop-unswitch-passes)),0.989782054,0.975775755,0.014150892,"module(rel-lookup-table-converter,function(loop(extra-simple-loop-unswitch-passes)))"

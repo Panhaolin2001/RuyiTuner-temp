@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.log
+
+dataset/bin/
+third_party/
+
+results/ga_tuning/
+results/ga_graph_cache/
+results/runtime_synergy_full_all.progress.log

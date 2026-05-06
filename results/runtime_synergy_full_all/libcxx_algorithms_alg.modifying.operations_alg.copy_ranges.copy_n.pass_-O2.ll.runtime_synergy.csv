@@ -1,0 +1,8 @@
+filename,baseline_sec,action1,action2,action2_sec,pair_sec,speedup_vs_action2,pipeline
+libcxx_algorithms_alg.modifying.operations_alg.copy_ranges.copy_n.pass_-O2.ll,0.001524725,hotcoldsplit,coro-early,0.001495103,0.001476948,0.012142824,"module(hotcoldsplit,coro-early)"
+libcxx_algorithms_alg.modifying.operations_alg.copy_ranges.copy_n.pass_-O2.ll,0.001524725,inliner-wrapper,coro-early,0.001495103,0.001430646,0.043112319,"module(inliner-wrapper,coro-early)"
+libcxx_algorithms_alg.modifying.operations_alg.copy_ranges.copy_n.pass_-O2.ll,0.001524725,mergefunc,coro-early,0.001495103,0.001406676,0.059144299,"module(mergefunc,coro-early)"
+libcxx_algorithms_alg.modifying.operations_alg.copy_ranges.copy_n.pass_-O2.ll,0.001524725,module-inline,coro-early,0.001495103,0.001455477,0.026503796,"module(module-inline,coro-early)"
+libcxx_algorithms_alg.modifying.operations_alg.copy_ranges.copy_n.pass_-O2.ll,0.001524725,function(infer-address-spaces),coro-early,0.001495103,0.001460789,0.022951394,"module(function(infer-address-spaces),coro-early)"
+libcxx_algorithms_alg.modifying.operations_alg.copy_ranges.copy_n.pass_-O2.ll,0.001524725,function(reg2mem),coro-early,0.001495103,0.001454385,0.027234535,"module(function(reg2mem),coro-early)"
+libcxx_algorithms_alg.modifying.operations_alg.copy_ranges.copy_n.pass_-O2.ll,0.001524725,function(loop(simple-loop-unswitch)),coro-early,0.001495103,0.001473234,0.014627199,"module(function(loop(simple-loop-unswitch)),coro-early)"
