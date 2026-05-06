@@ -22,6 +22,8 @@ Current sources:
 - `third_party/train/yarpgen`: generated C++ programs.
 - `third_party/train/llvm-project/libcxx/test/std`: runnable libc++ `.pass.cpp` tests accepted by the local toolchain.
 
+This training-set choice is only an example. The training corpus can be freely replaced or extended as long as each selected program can be compiled to LLVM IR, recompiled to an executable, and run successfully. The test sets are kept separate under `dataset/test` and should not be mixed into the default training set when reproducing the current setup.
+
 ## Build LLVM IR Datasets
 
 Configure with your own LLVM toolchain:
@@ -55,6 +57,18 @@ cmake --build build --target test-ll
 ```
 
 ## Runtime Synergy Graph And GA Tuning
+
+This repository already includes precomputed runtime-synergy artifacts from the example training set:
+
+- `results/runtime_synergy_full_all/*.runtime_synergy.csv`: per-training-benchmark synergy-pair CSV files.
+- `results/runtime_synergy_full_all.csv`: completed benchmark summary.
+- `results/runtime_synergy_full_all_pair_stats.csv`: aggregated pair frequency and effect-size statistics.
+- `results/runtime_synergy_graph_100.edges.csv`: weighted directed synergy graph edges.
+- `results/runtime_synergy_graph_100.nodes.csv`
+- `results/runtime_synergy_graph_100.adjacency.json`
+- `results/runtime_synergy_graph_100.graphml`
+
+These files can be used directly for graph-guided GA tuning. Recomputing runtime synergy pairs is expensive because it repeatedly runs many LLVM pass combinations and measures end-to-end runtime; expect it to take a long time.
 
 After the `.ll` datasets are built, run the optimization workflow explicitly:
 
