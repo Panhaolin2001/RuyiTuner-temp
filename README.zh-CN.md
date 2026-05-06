@@ -1,12 +1,16 @@
 <p align="center">
-  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="360">
+  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="240">
 </p>
 
 # RuyiTuner
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-RuyiTuner 用于构建 LLVM IR 数据集，并基于 LLVM New Pass Manager pass pipeline 做运行时协同性图构建和 GA 调优。
+RuyiTuner 是为了对具体程序做编译优化调优。现代 LLVM 的 pass 空间很大，而 `-O3`、`-Oz` 这类固定优化流水线本质上是一刀切策略：它们是很强的通用 baseline，但不可能对每一个程序、每一种 workload、每一个运行时间目标都最优。
+
+不同程序的最优 pass 序列往往不同，两个 pass 之间的组合效应也可能随着输入程序变化而变成正向、无效或负向。RuyiTuner 的目标就是构建可运行的 LLVM IR 数据集，测量真实运行时间下的 pass 协同性，构建协同大图，并利用这张图为每个目标程序搜索更优秀的优化序列。
+
+RuyiTuner 目前只支持 LLVM New Pass Manager pipeline。
 
 CMake 层只负责准备数据集：初始化 submodule、同步 benchmark 源码，并用用户自己的 LLVM 工具链构建训练集和测试集 `.ll` 文件。运行时协同对测量、大图构建和 GA tuning 都是显式的 Python 步骤，不会在普通 `make` 阶段自动执行。
 

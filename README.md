@@ -1,12 +1,16 @@
 <p align="center">
-  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="360">
+  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="240">
 </p>
 
 # RuyiTuner
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-RuyiTuner builds LLVM IR datasets and uses LLVM New Pass Manager pass pipelines for runtime-synergy graph construction and GA-based tuning.
+RuyiTuner is built for program-specific compiler optimization. Modern LLVM exposes a large pass space, but fixed pipelines such as `-O3` and `-Oz` are one-size-fits-all choices: they are strong general baselines, yet they are not optimal for every program, workload, or runtime objective.
+
+Different programs can prefer different pass sequences, and the interaction between two passes can be helpful, neutral, or harmful depending on the input program. RuyiTuner therefore builds runnable LLVM IR datasets, measures runtime pass synergy, constructs a synergy graph, and uses that graph to search for high-quality optimization sequences for each target program.
+
+RuyiTuner currently supports LLVM New Pass Manager pipelines only.
 
 The CMake layer only prepares datasets: it initializes submodules, syncs benchmark sources, and builds training/test `.ll` files with the user's LLVM toolchain. Runtime-synergy measurement, graph construction, and GA tuning are explicit Python steps.
 
