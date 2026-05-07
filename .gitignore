@@ -16,6 +16,7 @@ manifests/test_ll_manifest.csv
 results/ga_tuning/
 results/ga_graph_cache/
 results/runtime_synergy_full_all.progress.log
+runs/
 
 .DS_Store
 *.bc

@@ -72,6 +72,25 @@ cmake --build build --target extract-passes
 
 `extract-passes` depends on `train-ll` because it validates candidate NPM passes on `dataset/train/yarpgen_seed_1_-O2.ll`. The generated CSV is LLVM-toolchain dependent; if you switch LLVM versions, regenerate it.
 
+## No-Install Workflow Helper
+
+RuyiTuner also provides a lightweight workflow helper that does not require packaging or installation. Copy the example config, edit the LLVM tool paths, and run subcommands directly from the repository:
+
+```bash
+cp configs/ruyi.example.toml ruyi.toml
+
+python3 tools/ruyi.py tune dataset/test_ll/polyBench/linear-algebra_blas_gemm_gemm.ll \
+  --config ruyi.toml \
+  --time-budget-sec 60 \
+  --population-size 16
+```
+
+By default, workflow outputs go under `runs/<task>-<timestamp>/`, which is ignored by Git. This keeps user tuning results separate from the checked-in precomputed graph artifacts. `tools/` contains user-facing workflow helpers; `scripts/` contains lower-level dataset, graph, and tuning building blocks. The helper currently wraps:
+
+- `tune`: tune one LLVM IR file with graph-guided GA.
+- `find-synergy`: measure runtime synergy pairs from a manifest.
+- `build-graph`: build a directed synergy graph from a runtime-synergy summary CSV.
+
 ## Runtime Synergy Graph And GA Tuning
 
 ### PolyBench 10-Minute GA Tuning Example

@@ -1,0 +1,37 @@
+# Copy this file to ruyi.toml and edit paths for your local LLVM toolchain.
+
+[toolchain]
+opt = "opt"
+clang = "clang"
+clangxx = "clang++"
+llvm_link = "llvm-link"
+
+[paths]
+actions_csv = "manifests/llvm22_opt_pass_actions.csv"
+training_manifest = "manifests/training_ll_manifest.csv"
+graph_edges_csv = "results/runtime_synergy_graph_100.edges.csv"
+graph_cache_dir = "results/ga_graph_cache"
+run_root = "runs"
+
+[measure]
+min_total_ms = 300
+warmups = 3
+opt_timeout = 120
+compile_timeout = 300
+run_timeout = 600
+
+[graph]
+min_benchmark_count = 10
+min_avg_speedup = 0.05
+
+[ga]
+workers = 16
+generations = 10
+population_size = 100
+time_budget_sec = 60
+time_budget_population_size = 16
+mutation_rate = 0.9
+selection_rate = 0.1
+max_path_length = 8
+alpha = 1.0
+seed = 1234

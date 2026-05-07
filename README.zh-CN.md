@@ -72,6 +72,25 @@ cmake --build build --target extract-passes
 
 `extract-passes` 依赖 `train-ll`，因为它会在 `dataset/train/yarpgen_seed_1_-O2.ll` 上验证候选 NPM pass。生成的 CSV 和 LLVM 工具链版本相关；如果切换 LLVM 版本，需要重新生成。
 
+## 无需安装的工作流助手
+
+RuyiTuner 现在提供一个轻量工作流入口，不需要打包或安装。复制示例配置，改成本地 LLVM 工具链路径，然后直接在仓库中运行：
+
+```bash
+cp configs/ruyi.example.toml ruyi.toml
+
+python3 tools/ruyi.py tune dataset/test_ll/polyBench/linear-algebra_blas_gemm_gemm.ll \
+  --config ruyi.toml \
+  --time-budget-sec 60 \
+  --population-size 16
+```
+
+默认情况下，工作流输出会写到 `runs/<task>-<timestamp>/`，该目录已被 Git 忽略。这样用户自己的 tuning 结果不会和仓库里预计算好的协同图文件混在一起。`tools/` 放面向用户的工作流入口，`scripts/` 放底层数据集、构图和调优构件。当前 helper 包装了：
+
+- `tune`：对单个 LLVM IR 文件做图引导 GA 调优。
+- `find-synergy`：根据 manifest 测量运行时协同对。
+- `build-graph`：从运行时协同 summary CSV 构建有向协同图。
+
 ## 运行时协同图与 GA 调优
 
 ### PolyBench 10 分钟 GA 调优示例
