@@ -52,7 +52,11 @@ def apply_pipeline(opt, in_ll, out_ll, pipeline, timeout):
     return True, ""
 
 
-def measure_binary(bin_path, min_total_ms, warmups, timeout):
+def normalize_output(stdout, stderr, ignore_stdout=False, ignore_stderr=False):
+    return "" if ignore_stdout else stdout, "" if ignore_stderr else stderr
+
+
+def measure_binary(bin_path, min_total_ms, warmups, timeout, ignore_stdout=False, ignore_stderr=False):
     for _ in range(warmups):
         result = run([str(bin_path)], timeout)
         if result.returncode != 0:
@@ -69,11 +73,17 @@ def measure_binary(bin_path, min_total_ms, warmups, timeout):
         elapsed = time.perf_counter() - start
         if result.returncode != 0:
             return None, runs, result.returncode, result.stdout, result.stderr
+        normalized_stdout, normalized_stderr = normalize_output(
+            result.stdout,
+            result.stderr,
+            ignore_stdout,
+            ignore_stderr,
+        )
         if stdout is None:
-            stdout = result.stdout
-            stderr = result.stderr
-        elif result.stdout != stdout or result.stderr != stderr:
-            return None, runs, 65, result.stdout, result.stderr
+            stdout = normalized_stdout
+            stderr = normalized_stderr
+        elif normalized_stdout != stdout or normalized_stderr != stderr:
+            return None, runs, 65, normalized_stdout, normalized_stderr
         total += elapsed
         runs += 1
     return total / runs, runs, 0, stdout or "", stderr or ""
@@ -90,12 +100,21 @@ def build_and_measure_ll(
     warmups,
     expected_stdout=None,
     expected_stderr=None,
+    ignore_stdout=False,
+    ignore_stderr=False,
 ):
     bin_path = work_dir / f"{name}.out"
     ok, err = compile_ll(clangxx, ll_path, bin_path, compile_timeout)
     if not ok:
         return None, "compile_failed", "", err
-    runtime, runs, rc, stdout, stderr = measure_binary(bin_path, min_total_ms, warmups, run_timeout)
+    runtime, runs, rc, stdout, stderr = measure_binary(
+        bin_path,
+        min_total_ms,
+        warmups,
+        run_timeout,
+        ignore_stdout,
+        ignore_stderr,
+    )
     if runtime is None:
         return None, f"run_failed_{rc}", stdout, stderr
     if expected_stdout is not None and stdout != expected_stdout:

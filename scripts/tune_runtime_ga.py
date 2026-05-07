@@ -257,6 +257,8 @@ def run_prepared_candidate(prepared, args, baseline_time, baseline_stdout, basel
         args.min_total_ms,
         args.warmups,
         args.run_timeout,
+        args.ignore_stdout,
+        args.ignore_stderr,
     )
     if runtime is None:
         return -math.inf, math.inf, path, f"run_failed_{rc}"
@@ -337,6 +339,56 @@ def write_generation_rows(path, rows):
             writer.writerow(row)
 
 
+def write_trace_rows(path, rows):
+    with path.open("w", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "generation",
+                "elapsed_sec",
+                "best_runtime_sec",
+                "best_speedup_vs_baseline",
+                "best_speedup_vs_o3",
+                "best_status",
+                "path_len",
+                "cache_size",
+                "new_tests",
+                "best_path",
+            ],
+        )
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+
+def speedup(reference_runtime, runtime):
+    if reference_runtime is None or reference_runtime <= 0 or runtime == math.inf:
+        return None
+    return (reference_runtime - runtime) / reference_runtime
+
+
+def build_and_measure_o3(ll_path, work_dir, args, expected_stdout, expected_stderr):
+    o3_ll = work_dir / "baseline_o3.ll"
+    ok, err = apply_pipeline(args.opt, ll_path, o3_ll, "default<O3>", args.opt_timeout)
+    if not ok:
+        return None, f"opt_failed:{err}"
+    runtime, status, _, _ = build_and_measure_ll(
+        o3_ll,
+        work_dir,
+        "baseline_o3",
+        args.clangxx,
+        args.compile_timeout,
+        args.run_timeout,
+        args.min_total_ms,
+        args.warmups,
+        expected_stdout,
+        expected_stderr,
+        args.ignore_stdout,
+        args.ignore_stderr,
+    )
+    return runtime, status
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("ll", help="LLVM IR .ll file to tune")
@@ -369,6 +421,9 @@ def main():
     parser.add_argument("--opt-timeout", type=int, default=120)
     parser.add_argument("--compile-timeout", type=int, default=300)
     parser.add_argument("--run-timeout", type=int, default=600)
+    parser.add_argument("--skip-o3-baseline", action="store_true")
+    parser.add_argument("--ignore-stdout", action="store_true")
+    parser.add_argument("--ignore-stderr", action="store_true")
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -400,6 +455,7 @@ def main():
         f"{run_mode}_seed{args.seed}"
     )
     generation_csv = out_dir / f"{run_id}.generations.csv"
+    trace_csv = out_dir / f"{run_id}.trace.csv"
     result_json = out_dir / f"{run_id}.best.json"
 
     with tempfile.TemporaryDirectory(prefix=f"ga_tune_{ll_path.stem}_") as td:
@@ -413,9 +469,22 @@ def main():
             args.run_timeout,
             args.min_total_ms,
             args.warmups,
+            ignore_stdout=args.ignore_stdout,
+            ignore_stderr=args.ignore_stderr,
         )
         if baseline_time is None:
             raise SystemExit(f"baseline failed: {status}")
+
+        o3_time = None
+        o3_status = "skipped"
+        if not args.skip_o3_baseline:
+            o3_time, o3_status = build_and_measure_o3(
+                ll_path,
+                work_dir,
+                args,
+                baseline_stdout,
+                baseline_stderr,
+            )
 
         population = generate_population(
             graph,
@@ -430,6 +499,7 @@ def main():
         best_runtime = math.inf
         best_path = []
         best_status = ""
+        trace_rows = []
 
         generation = 0
         search_start = time.monotonic()
@@ -462,8 +532,26 @@ def main():
                 )
             if fitness_scores and fitness_scores[0][0] > best_score:
                 best_score, best_runtime, best_path, best_status = fitness_scores[0]
+            elapsed_sec = time.monotonic() - search_start
+            best_speedup_vs_o3 = speedup(o3_time, best_runtime)
+            trace_rows.append(
+                {
+                    "generation": generation,
+                    "elapsed_sec": f"{elapsed_sec:.9f}",
+                    "best_runtime_sec": "" if best_runtime == math.inf else f"{best_runtime:.9f}",
+                    "best_speedup_vs_baseline": "" if best_score == -math.inf else f"{best_score:.9f}",
+                    "best_speedup_vs_o3": "" if best_speedup_vs_o3 is None else f"{best_speedup_vs_o3:.9f}",
+                    "best_status": best_status,
+                    "path_len": len(best_path),
+                    "cache_size": len(fitness_cache),
+                    "new_tests": new_tests,
+                    "best_path": " ".join(best_path),
+                }
+            )
             print(
-                f"generation={generation} best_score={best_score:.6f} "
+                f"generation={generation} "
+                f"speedup_vs_baseline={best_score:.6f} "
+                f"speedup_vs_o3={'' if best_speedup_vs_o3 is None else f'{best_speedup_vs_o3:.6f}'} "
                 f"best_runtime={best_runtime:.9f} path_len={len(best_path)} "
                 f"unique_paths={len(fitness_scores)} cache_size={len(fitness_cache)} "
                 f"new_tests={new_tests} elapsed_sec={time.monotonic() - search_start:.3f}",
@@ -537,11 +625,15 @@ def main():
                 best_score, best_runtime, best_path, best_status = final_scores[0]
 
     write_generation_rows(generation_csv, generation_rows)
+    write_trace_rows(trace_csv, trace_rows)
     result = {
         "ll": str(ll_path),
         "baseline_runtime_sec": baseline_time,
+        "o3_runtime_sec": o3_time,
+        "o3_status": o3_status,
         "best_runtime_sec": best_runtime,
         "best_speedup_vs_baseline": best_score,
+        "best_speedup_vs_o3": speedup(o3_time, best_runtime),
         "best_status": best_status,
         "best_path": best_path,
         "best_pipeline": make_pipeline(best_path, action_by_pipeline) if best_path else "module()",
@@ -559,11 +651,18 @@ def main():
         f.write("\n")
 
     print(f"baseline_runtime_sec={baseline_time:.9f}")
+    if o3_time is None:
+        print(f"o3_runtime_sec= status={o3_status}")
+    else:
+        print(f"o3_runtime_sec={o3_time:.9f} status={o3_status}")
     print(f"best_runtime_sec={best_runtime:.9f}")
     print(f"best_speedup_vs_baseline={best_score:.9f}")
+    best_speedup_vs_o3 = speedup(o3_time, best_runtime)
+    print(f"best_speedup_vs_o3={'' if best_speedup_vs_o3 is None else f'{best_speedup_vs_o3:.9f}'}")
     print(f"best_path={' '.join(best_path)}")
     print(f"result_json={result_json}")
     print(f"generation_csv={generation_csv}")
+    print(f"trace_csv={trace_csv}")
     print(f"graph_cache={graph_cache} cache_hit={cache_hit}")
 
 
