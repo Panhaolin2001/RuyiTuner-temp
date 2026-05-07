@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="240">
+  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="180">
 </p>
 
 # RuyiTuner
@@ -73,6 +73,14 @@ cmake --build build --target extract-passes
 `extract-passes` depends on `train-ll` because it validates candidate NPM passes on `dataset/train/yarpgen_seed_1_-O2.ll`. The generated CSV is LLVM-toolchain dependent; if you switch LLVM versions, regenerate it.
 
 ## Runtime Synergy Graph And GA Tuning
+
+### PolyBench 10-Minute GA Tuning Example
+
+The following figure shows a full PolyBench run on an Intel(R) Xeon(R) Gold 6430 machine with 2 sockets, 32 cores per socket, 2 threads per core, and 128 logical CPUs. The LLVM toolchain was LLVM 22.0.0git, using LLVM New Pass Manager pipelines.
+
+Each PolyBench program was tuned for 10 minutes with graph-guided GA search. The population size was 64, the maximum pass-sequence length was 32, mutation rate was 0.9, candidate compilation used 16 workers, and each measured executable used at least 3 warmups and at least 300 ms of measured runtime. The curves report true speedup ratios: `T_original / T_opt` and `T_O3 / T_opt`, so values above 1.0 mean the tuned sequence is faster.
+
+![PolyBench 10-minute GA speedup curves](assets/polybench-ga-10min-speedup.png)
 
 This repository already includes precomputed runtime-synergy artifacts from the example training set:
 

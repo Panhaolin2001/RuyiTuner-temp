@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="240">
+  <img src="assets/ruyi-tuner-logo.png" alt="RuyiTuner logo" width="180">
 </p>
 
 # RuyiTuner
@@ -73,6 +73,14 @@ cmake --build build --target extract-passes
 `extract-passes` 依赖 `train-ll`，因为它会在 `dataset/train/yarpgen_seed_1_-O2.ll` 上验证候选 NPM pass。生成的 CSV 和 LLVM 工具链版本相关；如果切换 LLVM 版本，需要重新生成。
 
 ## 运行时协同图与 GA 调优
+
+### PolyBench 10 分钟 GA 调优示例
+
+下图是在 Intel(R) Xeon(R) Gold 6430 机器上全量运行 PolyBench 得到的结果。该机器为 2 路 CPU，每路 32 核，每核 2 线程，共 128 个逻辑 CPU。LLVM 工具链版本为 LLVM 22.0.0git，使用 LLVM New Pass Manager pipeline。
+
+每个 PolyBench 程序调优 10 分钟，使用协同图引导的 GA 搜索。种群数量为 64，最大 pass 序列长度为 32，变异率为 0.9，候选序列编译使用 16 个 worker；每次运行时间测量至少包含 3 次 warmup，并累计至少 300 ms 的测量时间。曲线中的纵轴是真正的 speedup ratio：`T_original / T_opt` 和 `T_O3 / T_opt`，因此大于 1.0 表示调优后的序列更快。
+
+![PolyBench 10 分钟 GA speedup 曲线](assets/polybench-ga-10min-speedup.png)
 
 仓库已经包含基于示例训练集预计算好的运行时协同数据：
 
