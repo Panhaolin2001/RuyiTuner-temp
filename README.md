@@ -12,6 +12,13 @@ Different programs can prefer different pass sequences, and the interaction betw
 
 RuyiTuner currently supports LLVM New Pass Manager pipelines only.
 
+## SPEC CPU2017
+
+This branch includes an isolated SPEC CPU2017 test-set adapter. See
+[README_SPEC_CPU2017.md](README_SPEC_CPU2017.md) for the full workflow from a
+local extracted SPEC CPU2017 tree, to linked `.ll` generation, runnable manifest
+creation, normal tuning, and pre-O3 tuning.
+
 ## Workflow
 
 ### 1. Build LLVM IR with your LLVM toolchain

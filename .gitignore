@@ -10,8 +10,14 @@ dataset/train/
 dataset/test/
 dataset/test_bin/
 dataset/test_ll/
+dataset/spec_cpu2017_runs/
 
 manifests/test_ll_manifest.csv
+manifests/spec_cpu2017_*_status.csv
+manifests/spec_cpu2017_test_ll_manifest.csv
+
+CPU2017-v*.tar.gz
+third_party/spec_cpu2017/
 
 results/ga_tuning/
 results/ga_graph_cache/
