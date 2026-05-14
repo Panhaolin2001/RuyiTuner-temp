@@ -27,6 +27,13 @@ The pre-O3 mode logs both `speedup_vs_origin` and `speedup_vs_o3`.
   - `manifests/llvm22_opt_pass_actions.csv`
   - `results/runtime_synergy_graph_100.edges.csv`
 
+The experiments on this branch used this LLVM revision:
+
+```text
+clang version 22.0.0git
+llvm-project commit bbd48fbb2fadebd8597e9cce6e318e9d07809783
+```
+
 The default SPEC root expected by the adapter is:
 
 ```text
@@ -36,7 +43,48 @@ third_party/spec_cpu2017/CPU2017-v1.1.9
 If your SPEC tree is elsewhere, pass `--spec-root /path/to/CPU2017-v1.1.9` to
 all adapter commands.
 
-## 1. Put SPEC CPU2017 Under the Expected Directory
+## 1. Build the Matching LLVM Toolchain
+
+Clone upstream `llvm-project`, checkout the exact commit used by the current
+experiments, and build the tools locally:
+
+```bash
+mkdir -p third_party
+git clone https://github.com/llvm/llvm-project.git third_party/llvm-project
+cd third_party/llvm-project
+git checkout bbd48fbb2fadebd8597e9cce6e318e9d07809783
+
+cmake -S llvm -B build-release \
+  -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DLLVM_ENABLE_PROJECTS="clang" \
+  -DLLVM_TARGETS_TO_BUILD="X86" \
+  -DLLVM_ENABLE_ASSERTIONS=OFF \
+  -DLLVM_ENABLE_RTTI=ON
+
+ninja -C build-release clang opt llvm-link
+```
+
+Use the just-built tools by putting the build directory first in `PATH`:
+
+```bash
+export PATH="$PWD/build-release/bin:$PATH"
+```
+
+Verify the version before generating SPEC LLVM IR or tuning:
+
+```bash
+which clang clang++ opt llvm-link
+clang --version
+opt --version
+```
+
+`clang --version` should report `22.0.0git` and include commit
+`bbd48fbb2fadebd8597e9cce6e318e9d07809783`.
+
+Then return to the RuyiTuner repository root for the remaining commands.
+
+## 2. Put SPEC CPU2017 Under the Expected Directory
 
 From a tarball:
 
@@ -54,7 +102,7 @@ third_party/spec_cpu2017/CPU2017-v1.1.9/benchspec/CPU/...
 SPEC source and generated run directories are local artifacts and should not be
 committed.
 
-## 2. Prepare SPEC Test Run Directories
+## 3. Prepare SPEC Test Run Directories
 
 The adapter needs SPEC's `speccmds.cmd` files for the `test` workload. They are
 created by SPEC's own tooling.
@@ -95,7 +143,7 @@ benchspec/CPU/<benchmark>/run/run_base_test_ruyi_all_gcc-m64.0000/speccmds.cmd
 If you use a different SPEC label, either use `--define label=ruyi_all_gcc` or
 adjust the adapter before building the runnable manifest.
 
-## 3. Generate Linked LLVM IR Files
+## 4. Generate Linked LLVM IR Files
 
 Run from the RuyiTuner repository root:
 
@@ -124,7 +172,7 @@ python3 scripts/spec_cpu2017_adapter.py build-all-source-ll \
   --compile-workers 32
 ```
 
-## 4. Build the Runnable Manifest
+## 5. Build the Runnable Manifest
 
 After SPEC `runsetup` and `.ll` generation:
 
@@ -144,7 +192,7 @@ manifests/spec_cpu2017_runnable_status.csv
 benchmark's `.ll`, run directory, and SPEC command with the candidate binary
 substituted into the command.
 
-## 5. Tune Without pre-O3
+## 6. Tune Without pre-O3
 
 This mode applies only the GA-generated pipeline to the original `.ll`.
 
@@ -164,7 +212,7 @@ python3 scripts/spec_cpu2017_adapter.py tune-manifest \
 Each benchmark is tuned for `--time-budget-sec` seconds. With the command above,
 that is 10 minutes per benchmark.
 
-## 6. Tune With pre-O3
+## 7. Tune With pre-O3
 
 This enhanced mode applies:
 
@@ -212,7 +260,7 @@ prepend_o3
 o3_pipeline
 ```
 
-## 7. Tune the 22-Benchmark Set Used in Experiments
+## 8. Tune the 22-Benchmark Set Used in Experiments
 
 The current 22-benchmark set excludes `525.x264_r`:
 
